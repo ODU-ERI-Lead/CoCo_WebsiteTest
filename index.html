@@ -49,10 +49,14 @@
           api.getAnimations(function(err, animations) {
             if (!err) {
               var shipTechAnimation = animations.find(function(animation) {
-                return animation.name === 'ShipTech';
+                return animation[1] === 'ShipTech';
               });
               if (shipTechAnimation) {
-                api.setCurrentAnimationByUID(shipTechAnimation.uid);
+                api.setCurrentAnimationByUID(shipTechAnimation[0], function(err) {
+                  if (!err) {
+                    console.log('Set animation track to', shipTechAnimation[0]);
+                  }
+                });
               }
             }
           });
