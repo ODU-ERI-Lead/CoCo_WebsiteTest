@@ -1,32 +1,119 @@
 <!DOCTYPE html>
 <html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>CoCo SketchFab Test</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <style>
-      html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        background-color: black;
-      }
-      .sketchfab-embed-wrapper {
-        height: 100%;
-        width: 100%; /* Ensure the div takes full width */
-      }
-      iframe {
-        height: 100%;
-        width: 100%; /* Set iframe width to 100% */
-        border: none; /* Optional: removes the iframe border */
-      }
-    </style>
-  </head>
-  <body>
-    <div class="sketchfab-embed-wrapper"> 
-      <iframe title="Floating iOT Edge Experimental Buoy" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share src="https://sketchfab.com/models/5e298341d91446988ff85142f2884c51/embed?autostart=1&camera=0&ui_theme=dark">
-      </iframe> 
-    </div>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>ShipTech Shipyard</title>
+  <link rel="shortcut icon" href="TemplateData/favicon.ico">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: black;
+    }
+    .sketchfab-embed-wrapper {
+      height: 100%;
+      width: 100%; /* Ensure the div takes full width */
+      position: relative;
+    }
+    iframe {
+      height: 100%;
+      width: 100%; /* Set iframe width to 100% */
+      border: none; /* Optional: removes the iframe border */
+    }
+    .custom-annotation {
+      position: absolute;
+      z-index: 1000;
+      pointer-events: none; /* Make sure it doesn't interfere with the iframe */
+    }
+    .custom-annotation img {
+      width: 50px; /* Adjust size as needed */
+      height: 50px;
+    }
+    .custom-annotation .tooltip {
+      display: none;
+      position: absolute;
+      background-color: white;
+      border: 1px solid #ccc;
+      padding: 5px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    .custom-annotation:hover .tooltip {
+      display: block;
+    }
+  </style>
+  <script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.0.js"></script>
+</head>
+<body>
+  <div class="sketchfab-embed-wrapper">
+    <iframe id="sketchfab-iframe" title="ShipTech Shipyard" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking"></iframe>
+  </div>
+  <script>
+    var iframe = document.getElementById('sketchfab-iframe');
+    var client = new Sketchfab(iframe);
+
+    client.init('YOUR_MODEL_ID', {
+      success: function onSuccess(api) {
+        api.start();
+        api.addEventListener('viewerready', function() {
+          console.log('Viewer is ready');
+
+          // Get annotations and create custom ones
+          api.getAnnotationList(function(err, annotations) {
+            if (!err) {
+              annotations.forEach(function(annotation, index) {
+                createCustomAnnotation(api, annotation, index);
+              });
+            }
+          });
+        });
+      },
+      error: function onError() {
+        console.log('Viewer error');
+      },
+      autostart: 1,
+      camera: 0,
+      ui_annotations: 0, // Hide default annotations
+      ui_theme: 'dark'
+    });
+
+    function createCustomAnnotation(api, annotation, index) {
+      var wrapper = document.querySelector('.sketchfab-embed-wrapper');
+
+      // Create custom annotation element
+      var annotationEl = document.createElement('div');
+      annotationEl.classList.add('custom-annotation');
+      annotationEl.innerHTML = `
+        <img src="TemplateData/ST_Icon.png" alt="Annotation Icon">
+        <div class="tooltip">${annotation.title}: ${annotation.description}</div>
+      `;
+      wrapper.appendChild(annotationEl);
+
+      // Position the custom annotation
+      api.getAnnotationWorldToScreen(annotation.index, function(err, position) {
+        if (!err) {
+          annotationEl.style.left = position[0] + 'px';
+          annotationEl.style.top = position[1] + 'px';
+        }
+      });
+
+      // Update position on camera change
+      api.addEventListener('cameraChange', function() {
+        api.getAnnotationWorldToScreen(annotation.index, function(err, position) {
+          if (!err) {
+            annotationEl.style.left = position[0] + 'px';
+            annotationEl.style.top = position[1] + 'px';
+          }
+        });
+      });
+
+      // Handle click to focus on annotation
+      annotationEl.addEventListener('click', function() {
+        api.gotoAnnotation(annotation.index);
+      });
+    }
+  </script>
+</body>
 </html>
