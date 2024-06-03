@@ -22,36 +22,20 @@
       width: 100%; /* Set iframe width to 100% */
       border: none; /* Optional: removes the iframe border */
     }
-    .custom-annotation {
-      position: absolute;
-      z-index: 1000;
-      pointer-events: none; /* Make sure it doesn't interfere with the iframe */
-    }
-    .custom-annotation img {
-      width: 50px; /* Adjust size as needed */
-      height: 50px;
-    }
-    .custom-annotation .tooltip {
-      display: none;
-      position: absolute;
-      background-color: white;
-      border: 1px solid #ccc;
-      padding: 5px;
-      border-radius: 3px;
-      white-space: nowrap;
-    }
-    .custom-annotation:hover .tooltip {
-      display: block;
-    }
   </style>
   <script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.0.js"></script>
 </head>
 <body>
   <div class="sketchfab-embed-wrapper">
-    <iframe title="ShipTech Shipyard" frameborder="0" allow="autoplay; fullscreen; xr-spatial-tracking" src="https://sketchfab.com/models/369f9b1133b4473880f258d950cde854/embed?autostart=1&annotations_visible=1&ui_infos=0&ui_stop=0&ui_inspector=0&ui_hint=0&ui_ar=0&ui_help=0&ui_settings=0&ui_vr=0&ui_theme=dark"> </iframe>
+    <iframe id="sketchfab-iframe" 
+            title="ShipTech Shipyard" 
+            frameborder="0" 
+            allow="autoplay; fullscreen; xr-spatial-tracking" 
+            src="https://sketchfab.com/models/369f9b1133b4473880f258d950cde854/embed?autostart=1&camera=0&annotations_visible=1&ui_infos=0&ui_stop=0&ui_inspector=0&ui_watermark_link=0&ui_watermark=0&ui_hint=0&ui_ar=0&ui_help=0&ui_settings=0">
+    </iframe>
   </div>
   <script>
-    var iframe = document.querySelector('.sketchfab-embed-wrapper iframe');
+    var iframe = document.getElementById('sketchfab-iframe');
     var client = new Sketchfab(iframe);
 
     client.init('369f9b1133b4473880f258d950cde854', {
@@ -59,13 +43,17 @@
         api.start();
         api.addEventListener('viewerready', function() {
           console.log('Viewer is ready');
+          api.play(); // Start animations
 
-          // Get annotations and create custom ones
-          api.getAnnotationList(function(err, annotations) {
+          // Find the animation named 'ShipTech' and set it as the active animation
+          api.getAnimations(function(err, animations) {
             if (!err) {
-              annotations.forEach(function(annotation, index) {
-                createCustomAnnotation(api, annotation, index);
+              var shipTechAnimation = animations.find(function(animation) {
+                return animation.name === 'ShipTech';
               });
+              if (shipTechAnimation) {
+                api.setCurrentAnimationByUID(shipTechAnimation.uid);
+              }
             }
           });
         });
@@ -75,45 +63,17 @@
       },
       autostart: 1,
       camera: 0,
-      ui_annotations: 0, // Hide default annotations
-      ui_theme: 'dark'
+      annotations_visible: 1,
+      ui_infos: 0,
+      ui_stop: 0,
+      ui_inspector: 0,
+      ui_watermark_link: 0,
+      ui_watermark: 0,
+      ui_hint: 0,
+      ui_ar: 0,
+      ui_help: 0,
+      ui_settings: 0
     });
-
-    function createCustomAnnotation(api, annotation, index) {
-      var wrapper = document.querySelector('.sketchfab-embed-wrapper');
-
-      // Create custom annotation element
-      var annotationEl = document.createElement('div');
-      annotationEl.classList.add('custom-annotation');
-      annotationEl.innerHTML = `
-        <img src="TemplateData/ST_Icon.png" alt="Annotation Icon">
-        <div class="tooltip">${annotation.title}: ${annotation.description}</div>
-      `;
-      wrapper.appendChild(annotationEl);
-
-      // Position the custom annotation
-      api.getWorldToScreenCoordinates(annotation.world_position, function(err, position) {
-        if (!err) {
-          annotationEl.style.left = position[0] + 'px';
-          annotationEl.style.top = position[1] + 'px';
-        }
-      });
-
-      // Update position on camera change
-      api.addEventListener('cameraChange', function() {
-        api.getWorldToScreenCoordinates(annotation.world_position, function(err, position) {
-          if (!err) {
-            annotationEl.style.left = position[0] + 'px';
-            annotationEl.style.top = position[1] + 'px';
-          }
-        });
-      });
-
-      // Handle click to focus on annotation
-      annotationEl.addEventListener('click', function() {
-        api.gotoAnnotation(annotation.index);
-      });
-    }
   </script>
 </body>
 </html>
